@@ -771,7 +771,6 @@ fun ConversationScreen(
                 modifier = Modifier.align(Alignment.TopCenter),
                 onBodyHeightChanged = { topBarBodyHeightPx = it },
                 onMenu = onMenu,
-                onNewChat = onNewChat,
             )
 
             ConversationComposerOverlay(
@@ -826,6 +825,7 @@ fun ConversationScreen(
                 onSend = onSend,
                 onQueueFollowUp = onQueueFollowUp,
                 onSteerFollowUp = onSteerFollowUp,
+                onNewChat = onNewChat,
             )
 
             ConversationTimeline(
@@ -872,7 +872,6 @@ private fun ConversationTopOverlay(
     modifier: Modifier = Modifier,
     onBodyHeightChanged: (Int) -> Unit,
     onMenu: () -> Unit,
-    onNewChat: () -> Unit,
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -886,7 +885,6 @@ private fun ConversationTopOverlay(
             Column {
                 ConversationTopBar(
                     onMenu = onMenu,
-                    onNewChat = onNewChat,
                 )
                 AetherExtensionSlot(
                     slot = AetherExtensionSlotChatTop,
@@ -907,7 +905,6 @@ private fun ConversationTopOverlay(
 private fun ConversationTopBar(
     modifier: Modifier = Modifier,
     onMenu: () -> Unit,
-    onNewChat: () -> Unit,
 ) {
     AetherConversationTopBarFrame(
         modifier = modifier
@@ -916,9 +913,9 @@ private fun ConversationTopBar(
         menuDescription = stringResource(R.string.common_menu),
         newChatDescription = stringResource(R.string.common_new_chat),
         onMenu = onMenu,
-        onNewChat = onNewChat,
+        showTrailingAction = false,
     ) {
-        // Model selector moved below the composer input bar.
+        // New chat moved below the composer input bar.
     }
 }
 
@@ -2289,6 +2286,7 @@ private fun ConversationComposerOverlay(
     onSend: () -> Unit,
     onQueueFollowUp: () -> Unit,
     onSteerFollowUp: () -> Unit,
+    onNewChat: () -> Unit,
 ) {
     val density = LocalDensity.current
     val imeVisible = WindowInsets.ime.getBottom(density) > 0
@@ -2358,20 +2356,34 @@ private fun ConversationComposerOverlay(
                         onSteerFollowUp = onSteerFollowUp,
                     )
                 }
-                ConversationModelSelector(
-                    options = modelOptions,
-                    modelCatalogInfo = modelCatalogInfo,
-                    selectedModelKey = selectedModelKey,
-                    reasoningEffort = reasoningEffort,
-                    thinkingLevelsByProviderModel = thinkingLevelsByProviderModel,
-                    thinkingLevelClampsByProviderModel = thinkingLevelClampsByProviderModel,
-                    onSelected = onModelSelected,
-                    onOpened = onModelSelectorOpened,
-                    onReasoningEffortSelected = onReasoningEffortSelected,
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 8.dp, start = 15.dp, end = 15.dp),
-                )
+                        .padding(top = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    ConversationModelSelector(
+                        options = modelOptions,
+                        modelCatalogInfo = modelCatalogInfo,
+                        selectedModelKey = selectedModelKey,
+                        reasoningEffort = reasoningEffort,
+                        thinkingLevelsByProviderModel = thinkingLevelsByProviderModel,
+                        thinkingLevelClampsByProviderModel = thinkingLevelClampsByProviderModel,
+                        onSelected = onModelSelected,
+                        onOpened = onModelSelectorOpened,
+                        onReasoningEffortSelected = onReasoningEffortSelected,
+                        modifier = Modifier.weight(1f),
+                    )
+                    HeaderCircleButton(
+                        icon = LucideIcons.SquarePen,
+                        contentDescription = stringResource(R.string.common_new_chat),
+                        onClick = onNewChat,
+                        size = 38.dp,
+                        iconSize = 19.dp,
+                        containerColor = AetherSurface.copy(alpha = 0.96f),
+                    )
+                }
             }
         }
     }
@@ -2533,15 +2545,8 @@ private fun ConversationComposerBar(
         attachmentMenuExpanded = false
         action()
     }
-    val composerHorizontalPadding by animateDpAsState(
-        targetValue = when {
-            plusSeparated -> 14.dp
-            hasComposerActionTray -> 18.dp
-            else -> 30.dp
-        },
-        animationSpec = tween(durationMillis = 260, easing = ChatGptMotionEasing),
-        label = "composer_horizontal_padding",
-    )
+    // Widen the composer and keep it aligned with the controls row below (14.dp).
+    val composerHorizontalPadding = 14.dp
     val fieldStartPadding by animateDpAsState(
         targetValue = if (plusSeparated) 50.dp else 0.dp,
         animationSpec = tween(durationMillis = 260, easing = ChatGptMotionEasing),

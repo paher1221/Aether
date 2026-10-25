@@ -230,30 +230,6 @@ fun AetherConversationDrawer(
                             color = AetherOnSurface,
                             modifier = Modifier.padding(start = 6.dp),
                         )
-                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            HeaderCircleButton(
-                                icon = LucideIcons.Search,
-                                contentDescription = stringResource(Res.string.common_search),
-                                onClick = {
-                                    if (searchExpanded || searchQuery.isNotBlank()) dismissSearch()
-                                    else searchExpanded = true
-                                },
-                                size = 46.dp,
-                                containerColor = Color.Transparent,
-                                showHalo = false,
-                            )
-                            if (showSettings) HeaderCircleButton(
-                                icon = LucideIcons.Settings,
-                                contentDescription = stringResource(Res.string.settings_title),
-                                onClick = {
-                                    dismissSearch()
-                                    onSettingsSelected()
-                                },
-                                size = 46.dp,
-                                containerColor = Color.Transparent,
-                                showHalo = false,
-                            )
-                        }
                     }
                     AnimatedVisibility(visible = searchExpanded || searchQuery.isNotBlank()) {
                         Column {
@@ -297,23 +273,29 @@ fun AetherConversationDrawer(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .navigationBarsPadding()
-                    .padding(end = 18.dp, bottom = 18.dp)
-                    .shadow(18.dp, RoundedCornerShape(999.dp), ambientColor = AetherScrim, spotColor = AetherScrim)
-                    .clip(RoundedCornerShape(999.dp))
-                    .background(Color(0xFFAD7BF9))
-                    .clickable {
-                        dismissSearch()
-                        onNewChat()
-                    }
-                    .padding(horizontal = 16.dp, vertical = 11.dp),
+                    .padding(end = 18.dp, bottom = 18.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Icon(LucideIcons.SquarePen, null, tint = Color.White, modifier = Modifier.size(17.dp))
-                Text(
-                    text = stringResource(Res.string.common_chat),
-                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Medium),
-                    color = Color.White,
+                HeaderCircleButton(
+                    icon = LucideIcons.Search,
+                    contentDescription = stringResource(Res.string.common_search),
+                    onClick = {
+                        if (searchExpanded || searchQuery.isNotBlank()) dismissSearch()
+                        else searchExpanded = true
+                    },
+                    size = 44.dp,
+                    containerColor = drawerBackground,
+                )
+                if (showSettings) HeaderCircleButton(
+                    icon = LucideIcons.Settings,
+                    contentDescription = stringResource(Res.string.settings_title),
+                    onClick = {
+                        dismissSearch()
+                        onSettingsSelected()
+                    },
+                    size = 44.dp,
+                    containerColor = drawerBackground,
                 )
             }
         }
