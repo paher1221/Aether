@@ -101,18 +101,17 @@ jobs:
           fi
           status=$?
           if [ "$status" -ne 0 ]; then
-            {
-              echo "## Kotlin/Gradle error lines"
-              grep -nE "^e: |error:|Unresolved reference|FAILURE: Build failed|What went wrong" "$LOG" | head -60
-              echo "## Last 150 lines"
-              tail -n 150 "$LOG"
-            } > "$RUNNER_TEMP/err.md"
-            jq -n --arg t "CI build error $GITHUB_SHA" --rawfile b "$RUNNER_TEMP/err.md" '{title:$t,body:$b}' > "$RUNNER_TEMP/issue.json"
-            curl -sS -X POST \
-              -H "Authorization: Bearer ${{ github.token }}" \
-              -H "Accept: application/vnd.github+json" \
-              "https://api.github.com/repos/${{ github.repository }}/issues" \
-              --data-binary @"$RUNNER_TEMP/issue.json" | head -c 200 || true
+            tail -n 400 "$LOG" > "$RUNNER_TEMP/build-errors.log"
+            cd "$GITHUB_WORKSPACE"
+            git config user.email "ci-log@users.noreply.github.com"
+            git config user.name "ci-log-bot"
+            git checkout --orphan ci-log
+            git rm -rf --quiet . >/dev/null 2>&1 || true
+            cp "$RUNNER_TEMP/build-errors.log" build-full.log
+            git add build-full.log
+            git commit -m "ci log for $GITHUB_SHA" >/dev/null
+            git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" ci-log:ci-log && echo "::notice::log pushed to ci-log branch" || echo "::warning::log push failed"
+            cd - >/dev/null
           fi
           exit $status
 
