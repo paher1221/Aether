@@ -89,6 +89,7 @@ jobs:
           NIGHTLY_KEY_PASSWORD: ${{ secrets.NIGHTLY_KEY_PASSWORD }}
           VERSION_NAME: ${{ steps.nightly.outputs.version_name }}
         run: |
+          set -o pipefail
           if [ "$NIGHTLY_SIGNING_MISSING" = "1" ]; then
             echo "::warning::Building Nightly APK with debug signing (no release keystore configured on this repo)."
             env -u NIGHTLY_KEYSTORE_FILE -u NIGHTLY_KEYSTORE_PASSWORD -u NIGHTLY_KEY_ALIAS -u NIGHTLY_KEY_PASSWORD \
@@ -96,6 +97,13 @@ jobs:
           else
             ./gradlew :app:assembleNightly --stacktrace -Paether.versionName="$VERSION_NAME"
           fi
+          status=$?
+          if [ "$status" -ne 0 ]; then
+            ./gradlew :app:assembleNightly -Paether.versionName="$VERSION_NAME" --console=plain 2>&1 \
+              | grep -E "^e: |^error: |Unresolved reference" | head -40 \
+              | while IFS= read -r line; do echo "::error::${line:0:450}"; done || true
+          fi
+          exit $status
 
       - name: Rename Nightly APK
         shell: bash
