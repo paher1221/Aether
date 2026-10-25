@@ -127,7 +127,9 @@ fun AetherConversationDrawer(
     val overlayHeight = with(density) {
         if (overlayHeightPx > 0) overlayHeightPx.toDp() else 132.dp
     }
-    val listBottomPadding = 96.dp + with(density) { footerHeightPx.toDp() }
+    val searchActive = searchExpanded || searchQuery.isNotBlank()
+    val listBottomPadding = 96.dp + with(density) { footerHeightPx.toDp() } +
+        if (searchActive) 64.dp else 0.dp
     val filteredSessions = remember(sessions, searchQuery) {
         val query = searchQuery.trim().lowercase()
         if (query.isBlank()) sessions else sessions.filter { it.title.lowercase().contains(query) }
@@ -231,13 +233,7 @@ fun AetherConversationDrawer(
                             modifier = Modifier.padding(start = 6.dp),
                         )
                     }
-                    AnimatedVisibility(visible = searchExpanded || searchQuery.isNotBlank()) {
-                        Column {
-                            Spacer(modifier = Modifier.height(16.dp))
-                            SharedDrawerSearchField(searchQuery) { searchQuery = it }
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(if (searchExpanded || searchQuery.isNotBlank()) 10.dp else 12.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
                 }
                 Column(
                     modifier = Modifier
@@ -269,34 +265,46 @@ fun AetherConversationDrawer(
             if (contextUsage != null) Box(Modifier.align(Alignment.BottomStart).navigationBarsPadding().padding(start = 22.dp, bottom = 28.dp).width(160.dp)) {
                 contextUsage()
             }
-            Row(
+            Column(
                 modifier = Modifier
-                    .align(Alignment.BottomEnd)
+                    .align(Alignment.BottomStart)
+                    .fillMaxWidth()
                     .navigationBarsPadding()
-                    .padding(end = 18.dp, bottom = 18.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalAlignment = Alignment.CenterVertically,
+                    .padding(start = 16.dp, end = 16.dp, bottom = 18.dp),
             ) {
-                HeaderCircleButton(
-                    icon = LucideIcons.Search,
-                    contentDescription = stringResource(Res.string.common_search),
-                    onClick = {
-                        if (searchExpanded || searchQuery.isNotBlank()) dismissSearch()
-                        else searchExpanded = true
-                    },
-                    size = 44.dp,
-                    containerColor = drawerBackground,
-                )
-                if (showSettings) HeaderCircleButton(
-                    icon = LucideIcons.Settings,
-                    contentDescription = stringResource(Res.string.settings_title),
-                    onClick = {
-                        dismissSearch()
-                        onSettingsSelected()
-                    },
-                    size = 44.dp,
-                    containerColor = drawerBackground,
-                )
+                AnimatedVisibility(visible = searchActive) {
+                    Column {
+                        SharedDrawerSearchField(searchQuery) { searchQuery = it }
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    HeaderCircleButton(
+                        icon = LucideIcons.Search,
+                        contentDescription = stringResource(Res.string.common_search),
+                        onClick = {
+                            if (searchActive) dismissSearch()
+                            else searchExpanded = true
+                        },
+                        size = 44.dp,
+                        containerColor = drawerBackground,
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    if (showSettings) HeaderCircleButton(
+                        icon = LucideIcons.Settings,
+                        contentDescription = stringResource(Res.string.settings_title),
+                        onClick = {
+                            dismissSearch()
+                            onSettingsSelected()
+                        },
+                        size = 44.dp,
+                        containerColor = drawerBackground,
+                    )
+                }
             }
         }
     }
