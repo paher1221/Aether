@@ -770,16 +770,7 @@ fun ConversationScreen(
             ConversationTopOverlay(
                 modifier = Modifier.align(Alignment.TopCenter),
                 onBodyHeightChanged = { topBarBodyHeightPx = it },
-                modelOptions = modelOptions,
-                modelCatalogInfo = modelCatalogInfo,
-                selectedModelKey = selectedModelKey,
-                reasoningEffort = reasoningEffort,
-                thinkingLevelsByProviderModel = thinkingLevelsByProviderModel,
-                thinkingLevelClampsByProviderModel = thinkingLevelClampsByProviderModel,
                 onMenu = onMenu,
-                onModelSelected = onModelSelected,
-                onModelSelectorOpened = onModelSelectorOpened,
-                onReasoningEffortSelected = onReasoningEffortSelected,
                 onNewChat = onNewChat,
             )
 
@@ -787,6 +778,15 @@ fun ConversationScreen(
                 modifier = Modifier.align(Alignment.BottomCenter),
                 conversationStateKey = conversationStateKey,
                 onBodyHeightChanged = { composerBodyHeightPx = it },
+                modelOptions = modelOptions,
+                modelCatalogInfo = modelCatalogInfo,
+                selectedModelKey = selectedModelKey,
+                reasoningEffort = reasoningEffort,
+                thinkingLevelsByProviderModel = thinkingLevelsByProviderModel,
+                thinkingLevelClampsByProviderModel = thinkingLevelClampsByProviderModel,
+                onModelSelected = onModelSelected,
+                onModelSelectorOpened = onModelSelectorOpened,
+                onReasoningEffortSelected = onReasoningEffortSelected,
                 value = inputValue,
                 attachments = draftAttachments,
                 availableSkills = availableSkills,
@@ -871,16 +871,7 @@ private fun LazyListState.isAtConversationBottom(): Boolean {
 private fun ConversationTopOverlay(
     modifier: Modifier = Modifier,
     onBodyHeightChanged: (Int) -> Unit,
-    modelOptions: List<ProviderModelOption>,
-    modelCatalogInfo: Map<String, ModelCatalogInfo>,
-    selectedModelKey: String,
-    reasoningEffort: String,
-    thinkingLevelsByProviderModel: Map<String, List<String>>,
-    thinkingLevelClampsByProviderModel: Map<String, Map<String, String>>,
     onMenu: () -> Unit,
-    onModelSelected: (String, (Boolean) -> Unit) -> Unit,
-    onModelSelectorOpened: () -> Unit,
-    onReasoningEffortSelected: (String) -> Unit,
     onNewChat: () -> Unit,
 ) {
     Column(
@@ -894,16 +885,7 @@ private fun ConversationTopOverlay(
         ) {
             Column {
                 ConversationTopBar(
-                    modelOptions = modelOptions,
-                    modelCatalogInfo = modelCatalogInfo,
-                    selectedModelKey = selectedModelKey,
-                    reasoningEffort = reasoningEffort,
-                    thinkingLevelsByProviderModel = thinkingLevelsByProviderModel,
-                    thinkingLevelClampsByProviderModel = thinkingLevelClampsByProviderModel,
                     onMenu = onMenu,
-                    onModelSelected = onModelSelected,
-                    onModelSelectorOpened = onModelSelectorOpened,
-                    onReasoningEffortSelected = onReasoningEffortSelected,
                     onNewChat = onNewChat,
                 )
                 AetherExtensionSlot(
@@ -924,16 +906,7 @@ private fun ConversationTopOverlay(
 @Composable
 private fun ConversationTopBar(
     modifier: Modifier = Modifier,
-    modelOptions: List<ProviderModelOption>,
-    modelCatalogInfo: Map<String, ModelCatalogInfo>,
-    selectedModelKey: String,
-    reasoningEffort: String,
-    thinkingLevelsByProviderModel: Map<String, List<String>>,
-    thinkingLevelClampsByProviderModel: Map<String, Map<String, String>>,
     onMenu: () -> Unit,
-    onModelSelected: (String, (Boolean) -> Unit) -> Unit,
-    onModelSelectorOpened: () -> Unit,
-    onReasoningEffortSelected: (String) -> Unit,
     onNewChat: () -> Unit,
 ) {
     AetherConversationTopBarFrame(
@@ -945,18 +918,7 @@ private fun ConversationTopBar(
         onMenu = onMenu,
         onNewChat = onNewChat,
     ) {
-        ConversationModelSelector(
-            options = modelOptions,
-            modelCatalogInfo = modelCatalogInfo,
-            selectedModelKey = selectedModelKey,
-            reasoningEffort = reasoningEffort,
-            thinkingLevelsByProviderModel = thinkingLevelsByProviderModel,
-            thinkingLevelClampsByProviderModel = thinkingLevelClampsByProviderModel,
-            onSelected = onModelSelected,
-            onOpened = onModelSelectorOpened,
-            onReasoningEffortSelected = onReasoningEffortSelected,
-            modifier = Modifier.fillMaxWidth(),
-        )
+        // Model selector moved below the composer input bar.
     }
 }
 
@@ -1058,8 +1020,8 @@ private fun ConversationModelSelector(
 
         if (menuVisibility.currentState || menuVisibility.targetState) {
             Popup(
-                alignment = Alignment.TopStart,
-                offset = IntOffset(0, anchorHeightPx + with(density) { 10.dp.roundToPx() }),
+                alignment = Alignment.BottomStart,
+                offset = IntOffset(0, -(anchorHeightPx + with(density) { 10.dp.roundToPx() })),
                 onDismissRequest = { expanded = false },
                 properties = PopupProperties(
                     focusable = true,
@@ -1071,12 +1033,12 @@ private fun ConversationModelSelector(
                     visibleState = menuVisibility,
                     enter = fadeIn() + scaleIn(
                         initialScale = 0.96f,
-                        transformOrigin = TransformOrigin(0.5f, 0f),
-                    ) + slideInVertically(initialOffsetY = { -it / 10 }),
+                        transformOrigin = TransformOrigin(0.5f, 1f),
+                    ) + slideInVertically(initialOffsetY = { it / 10 }),
                     exit = fadeOut() + scaleOut(
                         targetScale = 0.98f,
-                        transformOrigin = TransformOrigin(0.5f, 0f),
-                    ) + slideOutVertically(targetOffsetY = { -it / 12 }),
+                        transformOrigin = TransformOrigin(0.5f, 1f),
+                    ) + slideOutVertically(targetOffsetY = { it / 12 }),
                 ) {
                     AnimatedContent(
                         targetState = showingReasoningEffort && supportedThinkingLevels.isNotEmpty(),
@@ -2279,6 +2241,15 @@ private fun ConversationComposerOverlay(
     modifier: Modifier = Modifier,
     conversationStateKey: String,
     onBodyHeightChanged: (Int) -> Unit,
+    modelOptions: List<ProviderModelOption>,
+    modelCatalogInfo: Map<String, ModelCatalogInfo>,
+    selectedModelKey: String,
+    reasoningEffort: String,
+    thinkingLevelsByProviderModel: Map<String, List<String>>,
+    thinkingLevelClampsByProviderModel: Map<String, Map<String, String>>,
+    onModelSelected: (String, (Boolean) -> Unit) -> Unit,
+    onModelSelectorOpened: () -> Unit,
+    onReasoningEffortSelected: (String) -> Unit,
     value: String,
     attachments: List<ChatAttachment>,
     availableSkills: List<InstalledSkill>,
@@ -2387,6 +2358,20 @@ private fun ConversationComposerOverlay(
                         onSteerFollowUp = onSteerFollowUp,
                     )
                 }
+                ConversationModelSelector(
+                    options = modelOptions,
+                    modelCatalogInfo = modelCatalogInfo,
+                    selectedModelKey = selectedModelKey,
+                    reasoningEffort = reasoningEffort,
+                    thinkingLevelsByProviderModel = thinkingLevelsByProviderModel,
+                    thinkingLevelClampsByProviderModel = thinkingLevelClampsByProviderModel,
+                    onSelected = onModelSelected,
+                    onOpened = onModelSelectorOpened,
+                    onReasoningEffortSelected = onReasoningEffortSelected,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp, start = 15.dp, end = 15.dp),
+                )
             }
         }
     }
