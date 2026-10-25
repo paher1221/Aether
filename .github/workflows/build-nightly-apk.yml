@@ -21,6 +21,7 @@ on:
 
 permissions:
   contents: read
+  issues: write
 
 jobs:
   build:
@@ -90,18 +91,28 @@ jobs:
           VERSION_NAME: ${{ steps.nightly.outputs.version_name }}
         run: |
           set -o pipefail
+          LOG="$RUNNER_TEMP/build-full.log"
           if [ "$NIGHTLY_SIGNING_MISSING" = "1" ]; then
             echo "::warning::Building Nightly APK with debug signing (no release keystore configured on this repo)."
             env -u NIGHTLY_KEYSTORE_FILE -u NIGHTLY_KEYSTORE_PASSWORD -u NIGHTLY_KEY_ALIAS -u NIGHTLY_KEY_PASSWORD \
-              ./gradlew :app:assembleNightly --stacktrace -Paether.versionName="$VERSION_NAME"
+              ./gradlew :app:assembleNightly --stacktrace -Paether.versionName="$VERSION_NAME" 2>&1 | tee "$LOG"
           else
-            ./gradlew :app:assembleNightly --stacktrace -Paether.versionName="$VERSION_NAME"
+            ./gradlew :app:assembleNightly --stacktrace -Paether.versionName="$VERSION_NAME" 2>&1 | tee "$LOG"
           fi
           status=$?
           if [ "$status" -ne 0 ]; then
-            ./gradlew :app:assembleNightly -Paether.versionName="$VERSION_NAME" --console=plain 2>&1 \
-              | grep -E "^e: |^error: |Unresolved reference" | head -40 \
-              | while IFS= read -r line; do echo "::error::${line:0:450}"; done || true
+            {
+              echo "## Kotlin/Gradle error lines"
+              grep -nE "^e: |error:|Unresolved reference|FAILURE: Build failed|What went wrong" "$LOG" | head -60
+              echo "## Last 150 lines"
+              tail -n 150 "$LOG"
+            } > "$RUNNER_TEMP/err.md"
+            jq -n --arg t "CI build error $GITHUB_SHA" --rawfile b "$RUNNER_TEMP/err.md" '{title:$t,body:$b}' > "$RUNNER_TEMP/issue.json"
+            curl -sS -X POST \
+              -H "Authorization: Bearer ${{ github.token }}" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${{ github.repository }}/issues" \
+              --data-binary @"$RUNNER_TEMP/issue.json" | head -c 200 || true
           fi
           exit $status
 
