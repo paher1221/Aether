@@ -20,7 +20,7 @@ on:
       - '.github/workflows/build-nightly-apk.yml'
 
 permissions:
-  contents: read
+  contents: write
   issues: write
 
 jobs:

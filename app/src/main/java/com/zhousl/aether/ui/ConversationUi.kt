@@ -913,6 +913,7 @@ private fun ConversationTopBar(
         menuDescription = stringResource(R.string.common_menu),
         newChatDescription = stringResource(R.string.common_new_chat),
         onMenu = onMenu,
+        onNewChat = {},
         showTrailingAction = false,
     ) {
         // New chat moved below the composer input bar.
