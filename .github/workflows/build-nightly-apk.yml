@@ -72,16 +72,30 @@ jobs:
           NIGHTLY_KEYSTORE_BASE64: ${{ secrets.NIGHTLY_KEYSTORE_BASE64 }}
         run: |
           mkdir -p "$RUNNER_TEMP/aether-signing"
-          echo "$NIGHTLY_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/aether-signing/aether-nightly.jks"
+          if [ -z "$NIGHTLY_KEYSTORE_BASE64" ]; then
+            echo "::warning::NIGHTLY_KEYSTORE_BASE64 is not set; Nightly APK will fall back to debug signing."
+            echo "NIGHTLY_SIGNING_MISSING=1" >> "$GITHUB_ENV"
+          else
+            echo "$NIGHTLY_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/aether-signing/aether-nightly.jks"
+          fi
 
       - name: Build Nightly APK
+        shell: bash
         env:
+          NIGHTLY_SIGNING_MISSING: ${{ env.NIGHTLY_SIGNING_MISSING }}
           NIGHTLY_KEYSTORE_FILE: ${{ runner.temp }}/aether-signing/aether-nightly.jks
           NIGHTLY_KEYSTORE_PASSWORD: ${{ secrets.NIGHTLY_KEYSTORE_PASSWORD }}
           NIGHTLY_KEY_ALIAS: ${{ secrets.NIGHTLY_KEY_ALIAS }}
           NIGHTLY_KEY_PASSWORD: ${{ secrets.NIGHTLY_KEY_PASSWORD }}
           VERSION_NAME: ${{ steps.nightly.outputs.version_name }}
-        run: ./gradlew :app:assembleNightly --stacktrace -Paether.versionName="$VERSION_NAME"
+        run: |
+          if [ "$NIGHTLY_SIGNING_MISSING" = "1" ]; then
+            echo "::warning::Building Nightly APK with debug signing (no release keystore configured on this repo)."
+            env -u NIGHTLY_KEYSTORE_FILE -u NIGHTLY_KEYSTORE_PASSWORD -u NIGHTLY_KEY_ALIAS -u NIGHTLY_KEY_PASSWORD \
+              ./gradlew :app:assembleNightly --stacktrace -Paether.versionName="$VERSION_NAME"
+          else
+            ./gradlew :app:assembleNightly --stacktrace -Paether.versionName="$VERSION_NAME"
+          fi
 
       - name: Rename Nightly APK
         shell: bash
